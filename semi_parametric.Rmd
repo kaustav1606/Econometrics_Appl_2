@@ -1,0 +1,110 @@
+---
+title: "Semi-parametrics"
+author: "Kaustav"
+date: "20/05/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+
+```{r data}
+library(dplyr)
+
+columns_to_clean <- c("q104","gender_recode","area_recode", "zbfa", "rbcf_1unic")
+WB_clean <- WB[complete.cases(WB[, columns_to_clean]), ]
+
+WB$area_recode <- ifelse(WB$area == "rural", 0, 1)
+WB$gender_recode <- ifelse(WB$q102 == "female", 0, 1)
+
+new_df <- select(WB,q104,gender_recode,area_recode, zbfa )
+
+par_df <- select(WB_clean ,q104,area_recode )
+nonl_df <- select(WB_clean ,zbfa,gender_recode)
+
+```
+
+
+```{r data}
+######## Partial Linear Model
+
+
+X <- subset(WB_clean, select = c("gender_recode","zbfa"))
+Z <- subset(WB_clean,select=c( "area_recode","q104"))
+Y <- subset(WB_clean,select=c("rbcf_1unic"))
+Yv <- Y[["rbcf_1unic"]]
+Zv <- Z[["area_recode"]]
+Xv <- X[["gender_recode"]]
+Zv1 <- Z[["q104"]]
+Xv1 <- X[["zbfa"]]
+
+
+
+plspm <- npplregbw(formula=Yv~Xv1+factor(Xv)|factor(Zv)+Zv1)
+pl <- npplreg(bws=plspm)
+summary(pl)
+plot(plspm)
+plot(pl)
+
+```
+
+
+
+
+
+
+```{r data}
+#################### ichimura estimator of single index model
+ichbw <- npindexbw(xdat=new_df , ydat=WB$rbcf_1unic)
+
+summary(ichbw)
+
+ichmodel <- npindex(bws=ichbw, gradients=TRUE)
+
+summary(ichmodel)
+plot(ichbw, gradients=TRUE)
+plot(ichbw)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
